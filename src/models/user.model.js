@@ -23,9 +23,8 @@ const userSchema = new Schema({
     
     name:{
         type:String,
-        required:true,
-        lowercase:true,
-        unique:true,
+        required:false,
+        default:"no name"
     },
 
 
@@ -65,7 +64,7 @@ const userSchema = new Schema({
     },{timestamps:true})
 
 
-let userModel = mongoose.model('User',userSchema);
+let User = mongoose.model('User',userSchema);
 
 userSchema.pre('save',async function(next) {
 
@@ -105,4 +104,4 @@ userSchema.methods.generateAccessToken = async function (){
 )}
 
 
-module.exports =  userModel;
+export {User};

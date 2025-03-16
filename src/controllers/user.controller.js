@@ -1,22 +1,21 @@
 import { asyncHandler } from "../utlis/asyncHandler.js";
 import {ApiError} from "../utlis/ApiError.js";
-import User from "../models/user.model.js"
+import {User} from "../models/user.model.js"
 import {uploadFileOnCloudinary} from "../utlis/cloudinary.js"
 import { ApiResponse } from "../utlis/ApiResponse.js";
 const registerUser = asyncHandler( async (req,res) =>
 {
     // validate user after registering
-    let {fullName,password,email,name,avatar,coverImage,username  } = req.body;
+    let {fullName,password,email,avatar,coverImage,username  } = req.body;
 
-    if([fullName,password,email,name,avatar,coverImage,username].some((field)=>{
-        field.trim() == ""
-    })){
-        throw new ApiError(400,"All fields are required");
+    if ([fullName, password, email,username].some((field) =>  field.trim() === "")) {
+        throw new ApiError(400, "All fields are required");
     }
+    
 
     // check if email or pasword is empty then throw error
 
-    let existedUser =  User.findOne({
+    let existedUser =  await User.findOne({
         $or:[{email},{username},]
     });
 
@@ -25,7 +24,7 @@ const registerUser = asyncHandler( async (req,res) =>
     }
 
    const avatarLocalPath =  req.files?.avatar[0]?.path;
-   const coverLocalPath =  req.files?.coverImage[0]?.path;
+   const coverLocalPath =  req.files?.coverImage[0]?.path || null;
 
    if(!avatarLocalPath){
     ApiError(400,"Avatar file is required");
@@ -39,10 +38,11 @@ const registerUser = asyncHandler( async (req,res) =>
    if(!avatarImage){
     ApiError(400,"Avatar file is required");
    }
+   console.log("a",avatarImage);
 
    const user = await User.create({
     fullName,
-    avatar:avatar.url,
+    avatar:avatarImage?.url,
     coverImage: coverImage? coverImage?.url:"",
     email,
     password,

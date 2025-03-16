@@ -22,7 +22,9 @@ import fs from "fs"
                     console.log(error);
                   });
 
-                console.log('file upload result',uploadResult);
+                // console.log('file upload result',uploadResult);
+
+                fs.unlinkSync(localFilePath);
 
                 return uploadResult;
                 
