@@ -24,7 +24,6 @@ const userSchema = new Schema({
     name:{
         type:String,
         required:false,
-        default:"no name"
     },
 
 
@@ -64,44 +63,44 @@ const userSchema = new Schema({
     },{timestamps:true})
 
 
+    
+    userSchema.pre('save',async function(next) {
+        
+        if(!this.isModified(this.password)){
+            return next();
+        }
+        this.password = bcrypt.hash(this.password,10);
+        next();
+    } )
+    
+    
+    userSchema.methods.isPasswordCorrect = async function (password){
+        return await bcrypt.compare(password,this.password);
+    }
+    
+    userSchema.methods.generateRefreshToken = function () {
+        return jsonwebtoken.sign({
+            _id: this._id,
+            email: this.email,
+            username: this.username,
+            fullName:this.fullName,
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
+    )}
+    
+    userSchema.methods.generateAccessToken = async function (){
+        return jsonwebtoken.sign({
+            _id: this._id,
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
+    )}
+    
 let User = mongoose.model('User',userSchema);
-
-userSchema.pre('save',async function(next) {
-
-    if(!this.isModified(this.password)){
-        return next();
-    }
-    this.password = bcrypt.hash(this.password,10);
-    next();
-} )
-
-
-userSchema.methods.isPasswordCorrect = async function (password){
-    return await bcrypt.compare(password,this.password);
-}
-
-userSchema.methods.generateRefreshToken = function () {
-    return jsonwebtoken.sign({
-        _id: this._id,
-        email: this.email,
-        username: this.username,
-        fullName:this.fullName,
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-        expiry: process.env.ACCESS_TOKEN_EXPIRY
-    }
-)}
-
-userSchema.methods.generateAccessToken = async function (){
-    return jsonwebtoken.sign({
-        _id: this._id,
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-        expiry: process.env.ACCESS_TOKEN_EXPIRY
-    }
-)}
-
 
 export {User};
