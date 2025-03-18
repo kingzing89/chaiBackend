@@ -200,4 +200,96 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerUser, loginUser, logout, refreshAccessToken };
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  let { oldPassword, newPassword } = req.body;
+
+  let user = await User.findById(req.user._id);
+
+  let correct = await user.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Invalid password");
+  }
+
+  user.password = newPassword;
+
+  await user.save({ validateBeforeSave: false });
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, user, "Password changed Successfully"));
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  let user = req.user;
+  return res.status(200).json(user);
+});
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  try {
+    const { fullName, email } = req.body;
+
+    let user = req.user;
+
+    if (!fullName || !email) {
+      throw new ApiError(
+        400,
+        "Error Ocurred , you have to atleast give me the email or fullName field"
+      );
+    }
+
+    let updatedUser = await User.findByIdAndUpdate(
+      user?._id,
+      {
+        $set: {
+          fullName: fullName,
+          email: email,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      throw new ApiError(500, "Update Operation has failed");
+    }
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, updatedUser, "User data updated sucessfully"));
+  } catch (error) {
+    throw new ApiError(400, error?.message);
+  }
+});
+
+const updateAvatar = asyncHandler(async (req, res) => {
+  let localAvatarFilepath = req.files.path;
+
+  if (!localAvatarFilepath) {
+    throw new ApiError(400, "avatar path is missing");
+  }
+
+  let avatar = await uploadFileOnCloudinary(localAvatarFilepath);
+  if (!avatar.url) {
+    throw new ApiError(400, "avatar url is missing");
+  }
+  let user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        avatar: avatar.url,
+      },
+    },
+    { new: true }
+  );
+});
+
+export {
+  registerUser,
+  loginUser,
+  logout,
+  refreshAccessToken,
+  changeCurrentPassword,
+  updateAccountDetails,
+  getCurrentUser,
+  updateAvatar,
+};
